@@ -1,5 +1,28 @@
 extends ../layout/index
 
 block contenido 
-  div
-    h1.text-center.text-4xl.font-extrabold Iniciar sesión 
+  div.py-10
+    h1.text-4xl.my-10.font-extrabold.text-center Bienes 
+      span.font-normal Raices 
+    h1.text-center.text-2xl.font-extrabold=pagina 
+    
+    div.mt-8.mx-auto.max-w-md 
+      div.bg-white.py-8.px-8.shadow  
+        form.space-y-5
+          div 
+            label.block.tex-sm.uppercase.text-gray-500.mb-2.font-bold(for="email") Correo Electronico 
+            input#email.w-full.px-3.py-2.border.border-gray-300.rounded-md.placeholder-gray-400(placeholder="Correo Electronico" type="email" name="email")
+          div 
+            label.block.tex-sm.uppercase.text-gray-500.mb-2.font-bold(for="Password") Contraseña 
+            input#email.w-full.px-3.py-2.border.border-gray-300.rounded-md.placeholder-gray-400(placeholder="Contraseña" type="password" name="password")
+
+          div.flex.items-center.justify-between
+            a.text-gray-500.text-xs(href="/auth/registro") ¿No tienes cuenta? Crear Cuenta 
+            a.text-gray-500.text-xs(href="/auth/recuperar") Olvide mi contraseña.  
+          
+          input(class="w-full bg-indigo-600 hover:bg-indigo-900 text-white font-bold py-3 cursor-pointer" type="submit" value="Iniciar Sesion")
+
+
+
+   
+

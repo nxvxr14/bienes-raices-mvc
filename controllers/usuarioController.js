@@ -1,5 +1,6 @@
+import bcrypt from 'bcryptjs'
 import { check, validationResult } from 'express-validator'
-import { emailRegistro } from '../helpers/email.js'
+import { emailRegistro, emailRecuperacion } from '../helpers/email.js'
 import { generarId } from '../helpers/token.js'
 import Usuario from "../models/Usuario.js"
 
@@ -123,10 +124,154 @@ const formlarioRecuperarContraseña = (req,res) => {
   });
 }
 
+const resetPass = async (req, res) => {
+     
+    // Validacion
+    await check('email').isEmail().withMessage('Correo invalido').run(req);
+    
+    let resultado = validationResult(req);
+   
+    // Verificar que el resultado este vacio
+    if(!resultado.isEmpty()) {
+      
+      // Errores
+      return res.render('auth/recuperar', {
+          pagina: 'Recuperar Contraseña',
+          errores: resultado.array()
+        });
+
+    }
+
+    // Buscar el usuario en la base de datos
+    
+    const { email } = req.body;
+
+    const usuario = await Usuario.findOne( { where: {email } } );
+
+    if (!usuario){
+      // Errores
+      return res.render('auth/recuperar', {
+          pagina: 'Recuperar Contraseña',
+          errores: [{msg : "El correo no pertenece a ningun usuario."}] 
+        });
+    }
+    
+    // Generar un token y enviar email
+    usuario.token = generarId();
+    await usuario.save();
+
+    // Enviar correo de confirmacion
+    emailRecuperacion({
+      nombre : usuario.nombre,
+      email: usuario.email,
+      token : usuario.token
+    }) 
+
+
+    // Renderizar una vista
+    res.render('templates/mensaje.pug', {
+      pagina: 'Restablece tu Contraseña',
+      mensaje: 'Revise su correo y siga los pasos' 
+    })
+
+
+
+
+  }
+
+
+// Comprobar token para recuperar contraseña
+
+const comprobarToken = async (req, res) => {
+
+  const { token } = req.params;
+ 
+  const usuario = await Usuario.findOne( { where : {token } } );
+
+  if(!usuario) {
+
+      return res.render('auth/confirmar-cuenta', {
+        pagina: 'Reestablece tu contraseña',
+        mensaje: 'Hubo un error, intenta de nuevo.',
+        error: true
+      });
+      
+
+  }
+
+
+ // Formulario para agregar nuevo password
+
+    res.render('auth/reset-password', {
+    pagina: 'Reestablece tu contraseña',
+    mensaje: 'Hubo un error, intenta de nuevo.',
+    error: true
+  });
+ 
+
+
+}
+
+
+
+const nuevoPassword = async (req, res) => {
+  
+  // Validar password
+  await check('password').isLength({ min:6 }).withMessage('Contraseña debil').run(req);
+
+
+  let resultado = validationResult(req);
+   
+    //return res.json(resultado.array());
+
+    // Verificar que el resultado este vacio
+    if(!resultado.isEmpty()) {
+      
+      // Errores
+      return res.render('auth/reset-password', {
+          pagina: 'Reestablecer Contraseña',
+          errores: resultado.array(),
+          usuario: {
+            nombre: req.body.nombre,
+            email: req.body.email
+          }
+        });
+
+    }
+    
+  // Identificar usuario
+
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const usuario = await Usuario.findOne( { where: { token } } );
+
+
+  // Hashear nuevo password
+  const salt = await bcrypt.genSalt(10);
+  usuario.password = await bcrypt.hash(password, salt);
+
+  usuario.token = null;
+
+  await usuario.save();
+
+  res.render('auth/confirmar-cuenta',{
+    pagina : "Contraseña Actualizada",
+    mensaje : 'La contraseña se ha actualizado corrrectamente'
+  });
+
+
+}
+
+
+
 export {
   formularioLogin,
   formularioRegistro,
   registrar,
   comprobar, 
-  formlarioRecuperarContraseña 
+  formlarioRecuperarContraseña,
+  resetPass,
+  comprobarToken,
+  nuevoPassword
 }

@@ -1,5 +1,5 @@
 import express from 'express'
-import { formlarioRecuperarContraseña, formularioRegistro, registrar, comprobar, formularioLogin } from '../controllers/usuarioController.js';
+import { formlarioRecuperarContraseña, formularioRegistro, registrar, comprobar, formularioLogin, resetPass, comprobarToken, nuevoPassword } from '../controllers/usuarioController.js';
 
 
 const router = express.Router();
@@ -8,7 +8,12 @@ const router = express.Router();
 router.get('/login', formularioLogin );
 router.get('/registro', formularioRegistro);
 router.post('/registro', registrar);
+router.post('/recuperar', resetPass );
 router.get('/comprobar/:token', comprobar);
 router.get('/recuperar', formlarioRecuperarContraseña);
+
+// Almacena un nuevo password
+router.get('/recuperar/:token', comprobarToken);
+router.post('/recuperar/:token', nuevoPassword);
 
 export default router

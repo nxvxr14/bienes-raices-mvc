@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import { check, validationResult } from 'express-validator'
 import { emailRegistro, emailRecuperacion } from '../helpers/email.js'
-import { generarId } from '../helpers/token.js'
+import { generarId, generarJST } from '../helpers/token.js'
 import Usuario from "../models/Usuario.js"
 
 const formularioLogin = (req,res) => {
@@ -9,6 +10,78 @@ const formularioLogin = (req,res) => {
     pagina: 'Iniciar Sesion'
   });
 }
+
+const autenticar = async (req,res) => {
+
+  // Validacion
+  await check('email').isEmail().withMessage('El correo es obligatorio.').run(req);
+  await check('password').isLength({ min:6 }).withMessage('La contraseña es obligatoria.').run(req);
+
+  let resultado = validationResult(req);
+
+  if(!resultado.isEmpty()) {
+
+    return res.render('auth/login', {
+    pagina : 'Iniciar Sesion',
+    errores : resultado.array()
+    });
+  
+  }
+
+  const { email, password } = req.body;
+
+  // Comprobar si el usuario existe
+    const usuario = await Usuario.findOne( { where: {email} } );
+
+
+    if(!usuario){
+      return res.render('auth/login', {
+        pagina: 'Iniciar Sesion',
+        errores: [ { msg : 'Correo no registrado'}]
+      })      
+
+    }
+
+  // Comprobar si le usuario no esta confirmado
+     
+    if(!usuario.confirmado){
+     return res.render('auth/login', {
+        pagina: 'Iniciar Sesion',
+        errores: [ { msg : 'Usuario no confirmado. Por favor revise su correo'}]
+      })      
+
+    }
+
+
+  // Comprobar password
+  if(!usuario.verificarPassword(password) ) {
+
+      return res.render('auth/login', {
+        pagina: 'Iniciar Sesion',
+        errores: [ { msg : 'Contraseña incorrecta'}]
+      })      
+
+
+  }
+
+  // Autenticar el usuario
+  const token = generarJST( { 
+    id : usuario.id,
+    nombre : usuario.nombre
+   } );  
+
+  // Almacenar token en un cookie
+  return res.cookie('_token', token, {
+    httpOnly : true,
+    // sameSite : true,
+    // secure : true
+
+  }).redirect('mis-propiedades');
+
+}
+
+
+
 
 const formularioRegistro = (req,res) => {
   res.render('auth/registro', {
@@ -267,6 +340,7 @@ const nuevoPassword = async (req, res) => {
 
 export {
   formularioLogin,
+  autenticar,
   formularioRegistro,
   registrar,
   comprobar, 

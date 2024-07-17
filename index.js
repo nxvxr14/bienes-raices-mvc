@@ -1,9 +1,14 @@
 import express from 'express'
+
 import usuarioRoutes from './routes/usuarioRoutes.js'
 import database from './config/db.js'
+import cookieParser from 'cookie-parser';
 
 // Crea la app
 const app = express();
+
+// Habilita las cookie
+app.use(cookieParser());
 
 // Habilitar la lectura de datos de formularios
 app.use( express.urlencoded({ extended:true }) );

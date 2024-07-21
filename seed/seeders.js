@@ -1,7 +1,8 @@
 import categorias from "./categorias.js"
 import precios from "./precios.js"
+import usuarios from "./usuarios.js"
 import database from '../config/db.js'
-import { Categoria, Precio } from '../models/index.js'
+import { Categoria, Precio, Propiedad, Usuario } from '../models/index.js'
 
 const impotarDatos = async () => {
     try {
@@ -18,7 +19,9 @@ const impotarDatos = async () => {
      
        await Promise.all([
         Categoria.bulkCreate(categorias),
-        Precio.bulkCreate(precios)
+        Precio.bulkCreate(precios),
+        Usuario.bulkCreate(usuarios),
+
        ]) 
        
        console.log("Datos Importados Correctamente");
@@ -31,30 +34,23 @@ const impotarDatos = async () => {
 }
 
 const eliminarDatos = async () => {
-
     try {
-        await Promise.all([
-
-            Categoria.destroy({where: {}, truncate: true}),
-            Precio.destroy({where: {}, truncate: true})
-
-        ]);
-
-        // Para un borrado fuerte
-        // await database.sync({force: true});
-
+        
+        await database.sync({force: true});
+        
+        console.log("Datos eliminados correctamente");
         process.exit(0);
 
     } catch (error) {
-        console.log(error);
+        console.error("Error al eliminar datos:", error);
         process.exit(1);
     }
 }
 
+
 if(process.argv[2] === "-i"){
     impotarDatos();
-
-}
+;}
 
 
 if(process.argv[2] === "-e"){

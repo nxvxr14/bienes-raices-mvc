@@ -76,7 +76,7 @@ const autenticar = async (req,res) => {
     // sameSite : true,
     // secure : true
 
-  }).redirect('mis-propiedades');
+  }).redirect('../propiedades');
 
 }
 

@@ -2,6 +2,8 @@ import express from 'express'
 
 import usuarioRoutes from './routes/usuarioRoutes.js'
 import propiedadRoutes from './routes/propiedadesRoutes.js'
+import appRoutes from './routes/appRoutes.js'
+import apiRoutes from './routes/apiRoutes.js'
 
 import database from './config/db.js'
 import cookieParser from 'cookie-parser';
@@ -32,8 +34,10 @@ app.set('views', './views')
 app.use( express.static('public') );
 
 // Routing
+app.use('/', appRoutes);
 app.use('/auth', usuarioRoutes);
 app.use('/', propiedadRoutes);
+app.use('/api', apiRoutes);
 
 // Defnir puerto y arrancar
 const port = 3000;

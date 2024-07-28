@@ -1,3 +1,4 @@
+import { Sequelize } from 'sequelize';
 import { Precio, Categoria, Propiedad } from '../models/index.js'
 
 const inicio = async (req, res) => {
@@ -49,17 +50,71 @@ const inicio = async (req, res) => {
     });
 }
 
-const categorias = (req, res) => {
+const categorias = async (req, res) => {
+    const {id} = req.params;
+
+    // Comprobar que la categoria exista
+    const categoria = await Categoria.findByPk(id);
+
+    if(!categoria){
+        return res.redirect('/404');
+    }
+
+    const propiedades = await Propiedad.findAll({
+        where: {
+           categoriaId : id 
+        },
+        include:[
+            {
+                model: Precio,
+                as: 'precio'
+            }
+        ]
+    });
+
+    res.render('categoria',{
+        pagina: `${categoria.nombre}s en venta`,
+        propiedades 
+    })
 
 }
 
 
 const errorFour = (req, res) => {
+    res.render('404',{
+        pagina: 'Pagina no encontrada'
+    });
 
 }
 
 
-const buscador = (req, res) => {
+const buscador = async (req, res) => {
+    const {termino} = req.body;
+
+    if(!termino.trim()){
+        return res.redirect('back');
+
+    }
+
+    // Consultas las propiedades
+    const propiedades = await Propiedad.findAll({
+        where: {
+            titulo: {
+                [Sequelize.Op.like]: `%${termino}%`
+        }
+
+        },
+        include: [ {
+            model: Precio,
+            as: "precio"
+        }]
+
+    });
+
+    res.render("busqueda", {
+        pagina: 'Resultado de la busqueda',
+        propiedades
+    });
 
 }
 

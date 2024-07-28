@@ -1,7 +1,8 @@
 import { validationResult } from "express-validator";
 import { unlink } from "node:fs/promises";
-import { Precio, Categoria, Propiedad } from "../models/index.js";
-import { where } from "sequelize";
+import { Precio, Categoria, Propiedad, Mensaje, Usuario} from "../models/index.js";
+import {esVendedor} from "../helpers/index.js";
+// import { where } from "sequelize";
 
 const admin = async (req, res) => {
      // Leer QueryString
@@ -32,6 +33,7 @@ const admin = async (req, res) => {
                     include: [
                          { model: Categoria, as: "categoria" },
                          { model: Precio, as: "precio" },
+                         { model: Mensaje, as: "mensajes" },
                     ],
                }),
                Propiedad.count({
@@ -330,6 +332,7 @@ const mostrarPropiedad = async (req, res) => {
      // Validacon con base de datos
      const { id } = req.params;
 
+
      // Validar que la propiedad exista
      const propiedad = await Propiedad.findByPk(id, {
           include: [
@@ -342,11 +345,111 @@ const mostrarPropiedad = async (req, res) => {
           return res.redirect("/404");
      }
 
+
      res.render("propiedades/ver", {
           propiedad,
           pagina: propiedad.titulo,
+          usuario: req.usuario,
+          esVendedor: esVendedor(req.usuario?.id, propiedad.usuarioId)  
      });
 };
+
+const enviarMensaje = async (req, res) => {
+
+     // Validacon con base de datos
+     const { id } = req.params;
+
+
+     // Validar que la propiedad exista
+     const propiedad = await Propiedad.findByPk(id, {
+          include: [
+               { model: Categoria, as: "categoria" },
+               { model: Precio, as: "precio" },
+          ],
+     });
+
+     if (!propiedad) {
+          return res.redirect("/404");
+     }
+
+     // Renderizar errores
+
+     // Validacion
+     let resultado = validationResult(req);
+
+
+     if (!resultado.isEmpty()) {
+
+     return res.render("propiedades/ver", {
+          propiedad,
+          pagina: propiedad.titulo,
+          usuario: req.usuario,
+          esVendedor: esVendedor(req.usuario?.id, propiedad.usuarioId),
+          errores: resultado.array()
+     });
+
+     }
+
+
+     const {mensaje} = req.body;
+     const {id: propiedadId} = req.params;
+     const {id: usuarioId} = req.usuario;
+
+     // Almacenar mensaje
+     await Mensaje.create({
+          mensaje,
+          propiedadId,
+          usuarioId
+
+     });
+
+
+     res.render("propiedades/ver", {
+          propiedad,
+          pagina: propiedad.titulo,
+          usuario: req.usuario,
+          esVendedor: esVendedor(req.usuario?.id, propiedad.usuarioId),
+          enviado: true
+     });
+};
+
+// Leer mensajes recibidos
+
+const verMensajes = async (req, res) => {
+
+
+     // Validacon con base de datos
+     const { id } = req.params;
+
+     // Validar que la propiedad exista
+     const propiedad = await Propiedad.findByPk(id,{
+          include: [
+               { model: Mensaje, as: "mensajes",
+                    include:[
+                         {model: Usuario.scope('eliminarPassword'), as: "usuario"}
+                    ]
+                },
+          ],
+     });
+
+     if (!propiedad) {
+          return res.redirect("/propiedades");
+     }
+
+     // Revisa que el id de la propiedad sea la misma del usuario
+     if (propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+          return res.redirect("/propiedades");
+     }
+
+
+     res.render('propiedades/mensajes',{
+          pagina: 'Mensajes',
+          mensajes: propiedad.mensajes,
+     });
+
+}
+
+
 
 export {
      admin,
@@ -358,4 +461,6 @@ export {
      guardarCambiosE,
      eliminar,
      mostrarPropiedad,
+     enviarMensaje,
+     verMensajes
 };

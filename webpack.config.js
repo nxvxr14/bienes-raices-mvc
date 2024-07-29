@@ -6,7 +6,8 @@ export default {
         mapa: './scr/js/mapa.js',
         agregarImagen: './scr/js/agregarImagen.js',
         mostrarMapa: './scr/js/mostrarMapa.js',
-        mapaInicio: './scr/js/mapaInicio.js'
+        mapaInicio: './scr/js/mapaInicio.js',
+        cambiarEstado: './scr/js/cambiarEstado.js',
 
     },
     output: {
